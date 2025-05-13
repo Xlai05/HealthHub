@@ -1,17 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import BodyPartButton from '../components/BodyPartButton';
 
-const bodyParts = [
-  { name: 'Head', medication: 'Consider taking acetaminophen or ibuprofen.' },
-  { name: 'Stomach', medication: 'Try an antacid or simethicone.' },
-  { name: 'Back', medication: 'Over-the-counter pain relievers like naproxen may help.' },
-  { name: 'Throat', medication: 'Gargle with warm salt water or consider throat lozenges.' },
-  { name: 'Nose', medication: 'An OTC antihistamine may relieve symptoms.' },
-];
-
 export default function BodyPartSelectorScreen() {
+  const [bodyParts, setBodyParts] = useState([]);
   const [selectedMedication, setSelectedMedication] = useState('');
+
+  useEffect(() => {
+    // Fetch data from the backend
+    fetch('http://localhost:3000/symptom-recommendations')
+      .then((response) => response.json())
+      .then((data) => {
+        const uniqueBodyParts = [...new Map(data.map(item => [item.body_part, item])).values()];
+        setBodyParts(uniqueBodyParts);
+      })
+      .catch((error) => console.error('Error fetching data:', error));
+  }, []);
 
   const handleBodyPartSelect = (medication) => {
     setSelectedMedication(medication);
@@ -22,9 +26,9 @@ export default function BodyPartSelectorScreen() {
       <Text style={styles.title}>Select a body part to indicate your pain:</Text>
       {bodyParts.map((part) => (
         <BodyPartButton
-          key={part.name}
-          bodyPart={part.name}
-          onSelect={() => handleBodyPartSelect(part.medication)}
+          key={part.id}
+          bodyPart={part.body_part}
+          onSelect={() => handleBodyPartSelect(part.medicine_description)}
         />
       ))}
       {selectedMedication ? (
