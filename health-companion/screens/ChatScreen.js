@@ -1,13 +1,17 @@
+// screens/ChatScreen.js
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 
 export default function ChatScreen() {
-  const [input, setInput] = useState('');
-  const [response, setResponse] = useState('Try using paracetamol for mild headache. Stay hydrated!');
+  const [symptom, setSymptom] = useState('');
+  const [response, setResponse] = useState('');
 
   const handleCheck = () => {
-    // This will be replaced by real API call later
-    setResponse(`You said: ${input}. (Here would be an OTC suggestion.)`);
+    if (symptom.toLowerCase().includes('runny nose')) {
+      setResponse('Try an OTC antihistamine like loratadine or diphenhydramine.');
+    } else {
+      setResponse('Sorry, no suggestion for that symptom yet.');
+    }
   };
 
   return (
@@ -15,32 +19,19 @@ export default function ChatScreen() {
       <Text style={styles.title}>Enter your symptom:</Text>
       <TextInput
         style={styles.input}
-        placeholder="e.g., runny nose"
-        value={input}
-        onChangeText={setInput}
+        placeholder="e.g. runny nose"
+        value={symptom}
+        onChangeText={setSymptom}
       />
       <Button title="Check" onPress={handleCheck} />
-      <ScrollView style={styles.response}>
-        <Text>{response}</Text>
-      </ScrollView>
+      <Text style={styles.response}>{response}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
+  container: { padding: 20, marginTop: 50 },
   title: { fontSize: 18, marginBottom: 10 },
-  input: {
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
-  },
-  response: {
-    marginTop: 20,
-    backgroundColor: '#f0f0f0',
-    padding: 15,
-    borderRadius: 5,
-  },
+  input: { borderWidth: 1, padding: 10, marginBottom: 10, borderRadius: 5 },
+  response: { marginTop: 20, fontSize: 16 }
 });

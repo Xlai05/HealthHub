@@ -1,18 +1,20 @@
+// screens/FoodScreen.js
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 export default function FoodScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Suggested Foods (Mock Data)</Text>
-      <Text>- Eat more fruits (e.g., oranges, bananas)</Text>
-      <Text>- Include whole grains and lean protein</Text>
-      <Text>- Drink lots of water!</Text>
+      <Text style={styles.title}>Healthy Foods to Eat:</Text>
+      <Text>- Fruits like bananas and apples</Text>
+      <Text>- Leafy greens (e.g., spinach, kale)</Text>
+      <Text>- Lean proteins like chicken or tofu</Text>
+      <Text>- Lots of water!</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  title: { fontSize: 20, marginBottom: 10, fontWeight: 'bold' },
+  container: { padding: 20, marginTop: 50 },
+  title: { fontSize: 18, marginBottom: 10 }
 });
