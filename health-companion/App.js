@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
-import ChatScreen from './screens/ChatScreen';
+import BodyPartSelectorScreen from './screens/BodyPartSelectScreen';
 import FoodScreen from './screens/FoodScreen';
 import ExerciseScreen from './screens/ExerciseScreen';
 
@@ -31,7 +31,7 @@ export default function App() {
           tabBarInactiveTintColor: 'gray',
         })}
       >
-        <Tab.Screen name="Symptom Checker" component={ChatScreen} />
+        <Tab.Screen name="Symptom Checker" component={BodyPartSelectorScreen} />
         <Tab.Screen name="What to Eat" component={FoodScreen} />
         <Tab.Screen name="Exercises" component={ExerciseScreen} />
       </Tab.Navigator>
