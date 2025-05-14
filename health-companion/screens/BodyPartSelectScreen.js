@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Import i
 import BodyPartButton from '../components/BodyPartButton';
 
 const Tab = createBottomTabNavigator();
-const IPADRESS = '192.168.1.7'
+const IPADRESS = '192.168.1.145'
 
 export default function BodyPartSelectorScreen() {
   const [bodyParts, setBodyParts] = useState([]);
@@ -71,6 +71,17 @@ export default function BodyPartSelectorScreen() {
       .then((response) => response.json())
       .then((data) => setFoods(data.map((item) => item.food_suggestion)))
       .catch((error) => console.error('Error fetching foods:', error));
+  };
+
+  const handleRegionSelect = (region) => {
+    setSelectedRegion(region);
+    setBodyParts([]); // Clear body parts before fetching
+
+    // Fetch body parts for the selected region
+    fetch(`http://${IPADRESS}:3000/body-parts/${region}`)
+      .then((response) => response.json())
+      .then((data) => setBodyParts(data))
+      .catch((error) => console.error('Error fetching body parts:', error));
   };
 
   const handleBack = () => {
@@ -143,32 +154,6 @@ export default function BodyPartSelectorScreen() {
     </View>
   );
 
-  const upperExtremityNames = ['Head', 'Neck', 'Shoulder', 'Arm', 'Hand', 'Chest', 'Back'];
-  const lowerExtremityNames = ['Leg', 'Knee', 'Foot', 'Ankle', 'Hip'];
-
-  const upperExtremities = bodyParts.filter(part =>
-    upperExtremityNames.includes(part.body_part)
-  );
-  const lowerExtremities = bodyParts.filter(part =>
-    lowerExtremityNames.includes(part.body_part)
-  );
-
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <Text>Loading...</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.container}>
-        <Text style={{ color: 'red' }}>{error}</Text>
-      </View>
-    );
-  }
-
   if (!selectedBodyPart) {
     if (!selectedRegion) {
       return (
@@ -177,7 +162,7 @@ export default function BodyPartSelectorScreen() {
           <View style={{ flexDirection: 'column', alignItems: 'center', width: '100%' }}>
             <TouchableOpacity
               style={styles.imageButton}
-              onPress={() => setSelectedRegion('upper')}
+              onPress={() => handleRegionSelect('upper')}
             >
               <Image
                 source={require('../assets/upper_body.png')}
@@ -188,7 +173,7 @@ export default function BodyPartSelectorScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.imageButton}
-              onPress={() => setSelectedRegion('lower')}
+              onPress={() => handleRegionSelect('lower')}
             >
               <Image
                 source={require('../assets/lower_body.png')}
@@ -201,11 +186,10 @@ export default function BodyPartSelectorScreen() {
         </ScrollView>
       );
     } else {
-      const regionParts = selectedRegion === 'upper' ? upperExtremities : lowerExtremities;
       return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <Text style={styles.title}>Select a body part:</Text>
-          {regionParts.map((part) => (
+          {bodyParts.map((part) => (
             <TouchableOpacity
               key={part.body_part}
               style={[styles.button, { backgroundColor: '#4CAF50' }]}

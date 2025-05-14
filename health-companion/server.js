@@ -111,6 +111,20 @@ app.get('/exercises/:symptom', (req, res) => {
   });
 });
 
+// Example Node.js/Express route
+app.get('/body-parts/:region', (req, res) => {
+  const region = req.params.region;
+  const query = `SELECT DISTINCT body_part FROM symptom_recommendations WHERE body_region = ?`;
+  db.query(query, [region], (err, results) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send('Error fetching body parts');
+    } else {
+      res.json(results);
+    }
+  });
+});
+
 // Start the server
 const PORT = 3000;
 app.listen(PORT, '0.0.0.0', () => {
