@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Import icons
 import BodyPartButton from '../components/BodyPartButton';
 
 const Tab = createBottomTabNavigator();
+const IPADRESS = '192.168.1.7'
 
 export default function BodyPartSelectorScreen() {
   const [bodyParts, setBodyParts] = useState([]);
@@ -14,16 +15,25 @@ export default function BodyPartSelectorScreen() {
   const [foods, setFoods] = useState([]);
   const [selectedBodyPart, setSelectedBodyPart] = useState('');
   const [selectedSymptom, setSelectedSymptom] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selectedRegion, setSelectedRegion] = useState('');
 
   useEffect(() => {
-    // Fetch body parts from the backend
-    fetch('http://192.168.1.145:3000/symptom-recommendations')
+    setLoading(true);
+    setError('');
+    fetch(`http://${IPADRESS}:3000/symptom-recommendations`)
       .then((response) => response.json())
       .then((data) => {
         const uniqueBodyParts = [...new Map(data.map(item => [item.body_part, item])).values()];
         setBodyParts(uniqueBodyParts);
+        setLoading(false);
       })
-      .catch((error) => console.error('Error fetching body parts:', error));
+      .catch((error) => {
+        setError('Could not fetch body parts. Check your connection.');
+        setLoading(false);
+        console.error('Error fetching body parts:', error);
+      });
   }, []);
 
   const handleBodyPartSelect = (bodyPart) => {
@@ -34,7 +44,7 @@ export default function BodyPartSelectorScreen() {
     setFoods([]);
 
     // Fetch symptoms for the selected body part
-    fetch(`http://192.168.1.145:3000/symptoms/${bodyPart}`)
+    fetch(`http://${IPADRESS}:3000/symptoms/${bodyPart}`)
       .then((response) => response.json())
       .then((data) => setSymptoms(data.map((item) => item.symptom)))
       .catch((error) => console.error('Error fetching symptoms:', error));
@@ -47,17 +57,17 @@ export default function BodyPartSelectorScreen() {
     setFoods([]);
 
     // Fetch OTC medicines, exercises, and food suggestions for the selected symptom
-    fetch(`http://192.168.1.145:3000/otc-medicines/${symptom}`)
+    fetch(`http://${IPADRESS}:3000/otc-medicines/${symptom}`)
       .then((response) => response.json())
       .then((data) => setOtcMedicines(data))
       .catch((error) => console.error('Error fetching OTC medicines:', error));
 
-    fetch(`http://192.168.1.145:3000/exercises/${symptom}`)
+    fetch(`http://${IPADRESS}:3000/exercises/${symptom}`)
       .then((response) => response.json())
       .then((data) => setExercises(data.map((item) => item.exercise)))
       .catch((error) => console.error('Error fetching exercises:', error));
 
-    fetch(`http://192.168.1.145:3000/foods/${symptom}`)
+    fetch(`http://${IPADRESS}:3000/foods/${symptom}`)
       .then((response) => response.json())
       .then((data) => setFoods(data.map((item) => item.food_suggestion)))
       .catch((error) => console.error('Error fetching foods:', error));
@@ -133,21 +143,86 @@ export default function BodyPartSelectorScreen() {
     </View>
   );
 
-  if (!selectedBodyPart) {
+  const upperExtremityNames = ['Head', 'Neck', 'Shoulder', 'Arm', 'Hand', 'Chest', 'Back'];
+  const lowerExtremityNames = ['Leg', 'Knee', 'Foot', 'Ankle', 'Hip'];
+
+  const upperExtremities = bodyParts.filter(part =>
+    upperExtremityNames.includes(part.body_part)
+  );
+  const lowerExtremities = bodyParts.filter(part =>
+    lowerExtremityNames.includes(part.body_part)
+  );
+
+  if (loading) {
     return (
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Text style={styles.title}>Select a body part to indicate your pain:</Text>
-        {bodyParts.map((part) => (
-          <TouchableOpacity
-            key={part.body_part}
-            style={[styles.button, { backgroundColor: '#4CAF50' }]} // Match button color
-            onPress={() => handleBodyPartSelect(part.body_part)}
-          >
-            <Text style={styles.buttonText}>{part.body_part}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <View style={styles.container}>
+        <Text>Loading...</Text>
+      </View>
     );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ color: 'red' }}>{error}</Text>
+      </View>
+    );
+  }
+
+  if (!selectedBodyPart) {
+    if (!selectedRegion) {
+      return (
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <Text style={styles.title}>Select a body region:</Text>
+          <View style={{ flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+            <TouchableOpacity
+              style={styles.imageButton}
+              onPress={() => setSelectedRegion('upper')}
+            >
+              <Image
+                source={require('../assets/upper_body.png')}
+                style={styles.bodyImage}
+                resizeMode="contain"
+              />
+              <Text style={styles.regionLabel}>Upper Extremities</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.imageButton}
+              onPress={() => setSelectedRegion('lower')}
+            >
+              <Image
+                source={require('../assets/lower_body.png')}
+                style={styles.bodyImage}
+                resizeMode="contain"
+              />
+              <Text style={styles.regionLabel}>Lower Extremities</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      );
+    } else {
+      const regionParts = selectedRegion === 'upper' ? upperExtremities : lowerExtremities;
+      return (
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <Text style={styles.title}>Select a body part:</Text>
+          {regionParts.map((part) => (
+            <TouchableOpacity
+              key={part.body_part}
+              style={[styles.button, { backgroundColor: '#4CAF50' }]}
+              onPress={() => handleBodyPartSelect(part.body_part)}
+            >
+              <Text style={styles.buttonText}>{part.body_part}</Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: '#f44336' }]}
+            onPress={() => setSelectedRegion('')}
+          >
+            <Text style={styles.buttonText}>Back</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      );
+    }
   }
 
   if (!selectedSymptom) {
@@ -182,8 +257,20 @@ export default function BodyPartSelectorScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, marginTop: 50 },
-  scrollContainer: { padding: 20, marginTop: 50, alignItems: 'center' },
+  scrollContainer: {
+    flexGrow: 1,
+    backgroundColor: '#fff', // <-- Add this line
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#fff', // <-- Add this line
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
   title: { fontSize: 18, marginBottom: 10 },
   subtitle: { fontSize: 16, marginTop: 20, marginBottom: 10 },
   response: { marginTop: 10, fontSize: 16 },
@@ -196,4 +283,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center', // Center the text inside the button
   },
   buttonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+  imageButton: {
+    alignItems: 'center',
+    margin: 10,
+  },
+  bodyImage: {
+    width: 100,
+    height: 100,
+    marginBottom: 10,
+  },
+  regionLabel: {
+    color: '#222', // or 'black'
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 8,
+  },
 });

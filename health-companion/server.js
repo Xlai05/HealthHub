@@ -10,9 +10,9 @@ app.use(bodyParser.json());
 // Database connection
 const db = mysql.createConnection({
   host: 'localhost',
-  user: 'root', // Replace with your MariaDB username
-  password: '', // Replace with your MariaDB password
-  database: 'healthhub_sql', // Replace with your database name
+  user: 'root', 
+  password: '', 
+  database: 'healthhub_sql', 
 });
 
 db.connect((err) => {
@@ -113,6 +113,6 @@ app.get('/exercises/:symptom', (req, res) => {
 
 // Start the server
 const PORT = 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on http://0.0.0.0:${PORT}`);
 });

@@ -2,11 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
+const IPADRESS = '192.168.1.7'
+
 export default function FoodScreen() {
   const [foods, setFoods] = useState([]);
 
   useEffect(() => {
-    fetch('http://192.168.1.145:3000/foods')
+    fetch(`http://${IPADRESS}:3000/foods`)
       .then((response) => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
