@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Import i
 import BodyPartButton from '../components/BodyPartButton';
 
 const Tab = createBottomTabNavigator();
-const IPADRESS = '192.168.1.145'
+const IPADRESS = '192.168.242.156'
 
 export default function BodyPartSelectorScreen() {
   const [bodyParts, setBodyParts] = useState([]);

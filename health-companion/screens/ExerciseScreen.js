@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-const IPADRESS = '192.168.1.145'
+const IPADRESS = '192.168.242.156'
 
 export default function ExerciseScreen() {
   const [exercises, setExercises] = useState([]);
