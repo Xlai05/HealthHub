@@ -2,6 +2,7 @@ const express = require('express');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const app = express();
 app.use(cors());
@@ -123,6 +124,28 @@ app.get('/body-parts/:region', (req, res) => {
       res.json(results);
     }
   });
+});
+
+const genAI = new GoogleGenerativeAI('AIzaSyCAna421OiIapQclw9VTxU3E8FLOnApzdk');
+
+app.post("/ask-gemini", async (req, res) => {
+  const { prompt } = req.body;
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }] }]
+    });
+    const reply = result.response.text();
+    res.json({ reply });
+  } catch (e) {
+    // Check for quota error
+    if (e.status === 429 || (e.message && e.message.includes('quota'))) {
+      res.status(429).json({ reply: "You have reached your Gemini AI quota. Please try again later or check your billing/quota settings." });
+    } else {
+      console.error("Gemini AI error:", e);
+      res.status(500).json({ reply: "Gemini AI error." });
+    }
+  }
 });
 
 // Start the server

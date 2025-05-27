@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Modal } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Import icons
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import BodyPartButton from '../components/BodyPartButton';
+import { CheckBox } from 'react-native-elements'; // Import CheckBox
+import SymptomPopupScreen from './SymptomPopupScreen';
 
 const Tab = createBottomTabNavigator();
-const IPADRESS = '192.168.242.156'
+const IPADRESS = '192.168.1.145'
 
 export default function BodyPartSelectorScreen() {
   const [bodyParts, setBodyParts] = useState([]);
@@ -18,6 +20,11 @@ export default function BodyPartSelectorScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('');
+  const [selectMany, setSelectMany] = useState(false); // For multi-select
+  const [selectedSymptoms, setSelectedSymptoms] = useState([]); // For storing selected symptoms
+  const [aiResponse, setAiResponse] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -42,6 +49,7 @@ export default function BodyPartSelectorScreen() {
     setOtcMedicines([]);
     setExercises([]);
     setFoods([]);
+    setSelectedSymptoms([]); // Clear selected symptoms
 
     // Fetch symptoms for the selected body part
     fetch(`http://${IPADRESS}:3000/symptoms/${bodyPart}`)
@@ -93,6 +101,16 @@ export default function BodyPartSelectorScreen() {
     } else if (selectedBodyPart) {
       setSelectedBodyPart('');
       setSymptoms([]);
+      setSelectedSymptoms([]);
+    }
+  };
+
+  // Multi-select symptom handler
+  const handleSymptomCheckbox = (symptom) => {
+    if (selectedSymptoms.includes(symptom)) {
+      setSelectedSymptoms(selectedSymptoms.filter(s => s !== symptom));
+    } else {
+      setSelectedSymptoms([...selectedSymptoms, symptom]);
     }
   };
 
@@ -101,17 +119,68 @@ export default function BodyPartSelectorScreen() {
       <Text style={styles.subtitle}>Select a symptom for {selectedBodyPart}:</Text>
       {Array.isArray(symptoms) && symptoms.length > 0 ? (
         symptoms.map((symptom, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[styles.button, { backgroundColor: '#4CAF50' }]} // Match body part button color
-            onPress={() => handleSymptomSelect(symptom)}
-          >
-            <Text style={styles.buttonText}>{symptom.toString()}</Text>
-          </TouchableOpacity>
+          <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 5, width: '100%' }}>
+            {selectMany ? (
+              <CheckBox
+                checked={selectedSymptoms.includes(symptom)}
+                onPress={() => handleSymptomCheckbox(symptom)}
+                containerStyle={{ padding: 0, marginRight: 8 }}
+              />
+            ) : null}
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: '#4CAF50', flex: 1 }]}
+              onPress={() => {
+                if (selectMany) {
+                  handleSymptomCheckbox(symptom);
+                } else {
+                  handleSymptomSelect(symptom);
+                }
+              }}
+            >
+              <Text style={styles.buttonText}>{symptom.toString()}</Text>
+            </TouchableOpacity>
+          </View>
         ))
       ) : (
         <Text>No symptoms available for this body part.</Text>
       )}
+
+      {/* Ask Gemini AI Button - only when selectMany is true */}
+      {selectMany && (
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: '#2196F3' }]}
+          onPress={async () => {
+            setAiLoading(true);
+            setAiResponse('');
+            const prompt = `What sickness are possible if you have these symptoms: ${selectedSymptoms.join(', ')}?`;
+            try {
+              const response = await fetch('http://192.168.1.145:3000/ask-gemini', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt }),
+              });
+              const data = await response.json();
+              setAiResponse(data.reply || 'No response from AI.');
+              setModalVisible(true); // <-- Show modal
+            } catch (e) {
+              setAiResponse('Failed to contact Gemini AI.');
+              setModalVisible(true); // <-- Show modal even on error
+            }
+            setAiLoading(false);
+          }}
+          disabled={selectedSymptoms.length === 0 || aiLoading}
+        >
+          <Text style={styles.buttonText}>{aiLoading ? 'Asking Gemini AI...' : 'Ask Gemini AI'}</Text>
+        </TouchableOpacity>
+      )}
+
+      
+      {selectMany && aiResponse && !aiLoading && (
+        <View style={{ marginTop: 20, backgroundColor: '#e3f2fd', padding: 12, borderRadius: 8 }}>
+          <Text style={{ color: '#222', fontSize: 16 }}>{aiResponse}</Text>
+        </View>
+      )}
+
       <TouchableOpacity style={[styles.button, { backgroundColor: '#f44336' }]} onPress={handleBack}>
         <Text style={styles.buttonText}>Back</Text>
       </TouchableOpacity>
@@ -158,6 +227,23 @@ export default function BodyPartSelectorScreen() {
     if (!selectedRegion) {
       return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
+          {/* Select Many Button */}
+          <TouchableOpacity
+            style={[
+              styles.button,
+              {
+                backgroundColor: selectMany ? '#4CAF50' : '#f44336',
+                marginBottom: 10,
+                width: '90%',
+              }
+            ]}
+            onPress={() => setSelectMany(!selectMany)}
+          >
+            <Text style={styles.buttonText}>
+              {'Select Many'}
+            </Text>
+          </TouchableOpacity>
+
           <Text style={styles.title}>Select a body region:</Text>
           <View style={{ flexDirection: 'column', alignItems: 'center', width: '100%' }}>
             <TouchableOpacity
@@ -243,14 +329,14 @@ export default function BodyPartSelectorScreen() {
 const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
-    backgroundColor: '#fff', // <-- Add this line
+    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
   },
   container: {
     flex: 1,
-    backgroundColor: '#fff', // <-- Add this line
+    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
@@ -259,12 +345,12 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 16, marginTop: 20, marginBottom: 10 },
   response: { marginTop: 10, fontSize: 16 },
   button: {
-    width: '90%', // Set a fixed width for all buttons
+    width: '90%',
     padding: 15,
     borderRadius: 5,
-    marginVertical: 10, // Add spacing between buttons
+    marginVertical: 10,
     alignItems: 'center',
-    justifyContent: 'center', // Center the text inside the button
+    justifyContent: 'center',
   },
   buttonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
   imageButton: {
@@ -277,7 +363,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   regionLabel: {
-    color: '#222', // or 'black'
+    color: '#222',
     fontSize: 16,
     fontWeight: 'bold',
     marginTop: 8,
