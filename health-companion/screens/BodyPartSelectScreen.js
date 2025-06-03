@@ -49,7 +49,7 @@ export default function BodyPartSelectorScreen() {
     setOtcMedicines([]);
     setExercises([]);
     setFoods([]);
-    setSelectedSymptoms([]); // Clear selected symptoms
+    // setSelectedSymptoms([]); // <-- Do NOT clear here
 
     // Fetch symptoms for the selected body part
     fetch(`http://${IPADRESS}:3000/symptoms/${bodyPart}`)
@@ -98,10 +98,11 @@ export default function BodyPartSelectorScreen() {
       setOtcMedicines([]);
       setExercises([]);
       setFoods([]);
+      // Do NOT clear selectedSymptoms here
     } else if (selectedBodyPart) {
       setSelectedBodyPart('');
       setSymptoms([]);
-      setSelectedSymptoms([]);
+      // setSelectedSymptoms([]); // <-- Remove or comment out this line
     }
   };
 
@@ -119,33 +120,45 @@ export default function BodyPartSelectorScreen() {
       <Text style={styles.subtitle}>Select a symptom for {selectedBodyPart}:</Text>
       {Array.isArray(symptoms) && symptoms.length > 0 ? (
         symptoms.map((symptom, index) => (
-          <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 5, width: '100%' }}>
+          <TouchableOpacity
+            key={index}
+            style={[
+              styles.button,
+              {
+                backgroundColor: selectedSymptoms.includes(symptom) ? '#388e3c' : '#4CAF50',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'flex-start', // Align content to the left
+              }
+            ]}
+            onPress={() => {
+              if (selectMany) {
+                handleSymptomCheckbox(symptom);
+              } else {
+                handleSymptomSelect(symptom);
+              }
+            }}
+          >
             {selectMany ? (
               <CheckBox
                 checked={selectedSymptoms.includes(symptom)}
                 onPress={() => handleSymptomCheckbox(symptom)}
-                containerStyle={{ padding: 0, marginRight: 8 }}
+                containerStyle={{
+                  padding: 0,
+                  marginRight: 8,
+                  backgroundColor: 'transparent',
+                  borderWidth: 0,
+                }}
               />
             ) : null}
-            <TouchableOpacity
-              style={[styles.button, { backgroundColor: '#4CAF50', flex: 1 }]}
-              onPress={() => {
-                if (selectMany) {
-                  handleSymptomCheckbox(symptom);
-                } else {
-                  handleSymptomSelect(symptom);
-                }
-              }}
-            >
-              <Text style={styles.buttonText}>{symptom.toString()}</Text>
-            </TouchableOpacity>
-          </View>
+            <Text style={styles.buttonText}>{symptom.toString()}</Text>
+          </TouchableOpacity>
         ))
       ) : (
         <Text>No symptoms available for this body part.</Text>
       )}
 
-      {/* Ask Gemini AI Button - only when selectMany is true */}
+      
       {selectMany && (
         <TouchableOpacity
           style={[styles.button, { backgroundColor: '#2196F3' }]}
@@ -161,10 +174,10 @@ export default function BodyPartSelectorScreen() {
               });
               const data = await response.json();
               setAiResponse(data.reply || 'No response from AI.');
-              setModalVisible(true); // <-- Show modal
+              setModalVisible(true);
             } catch (e) {
               setAiResponse('Failed to contact Gemini AI.');
-              setModalVisible(true); // <-- Show modal even on error
+              setModalVisible(true);
             }
             setAiLoading(false);
           }}

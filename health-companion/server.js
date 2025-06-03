@@ -138,11 +138,11 @@ app.post("/ask-gemini", async (req, res) => {
     const reply = result.response.text();
     res.json({ reply });
   } catch (e) {
+    console.error("Gemini AI error:", e);
     // Check for quota error
     if (e.status === 429 || (e.message && e.message.includes('quota'))) {
       res.status(429).json({ reply: "You have reached your Gemini AI quota. Please try again later or check your billing/quota settings." });
     } else {
-      console.error("Gemini AI error:", e);
       res.status(500).json({ reply: "Gemini AI error." });
     }
   }
