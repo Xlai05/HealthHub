@@ -1,20 +1,22 @@
+require('dotenv').config(); // Load environment variables from .env
+
 const express = require('express');
 const mysql = require('mysql2');
-const bodyParser = require('body-parser');
+//const bodyParser = require('body-parser');
 const cors = require('cors');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
 // Database connection
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root', 
   password: '', 
-  database: 'healthhub_sql', 
-});
+  database: 'healthhubdata', // AYAW I REMOVE NING COMMENT MAR, sean's database name "healthhubdata", imoha kay "healthhub_sql" ichange change ra. 
+})
 
 db.connect((err) => {
   if (err) {
@@ -126,12 +128,12 @@ app.get('/body-parts/:region', (req, res) => {
   });
 });
 
-const genAI = new GoogleGenerativeAI('AIzaSyCAna421OiIapQclw9VTxU3E8FLOnApzdk');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY); 
 
 app.post("/ask-gemini", async (req, res) => {
   const { prompt } = req.body;
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: prompt }] }]
     });
@@ -152,4 +154,5 @@ app.post("/ask-gemini", async (req, res) => {
 const PORT = 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on http://0.0.0.0:${PORT}`);
+  console.log('Ensure your GEMINI_API_KEY is set as an environment variable.');
 });
