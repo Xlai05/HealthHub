@@ -15,7 +15,7 @@ const db = mysql.createConnection({
   host: 'localhost',
   user: 'root', 
   password: '', 
-  database: 'healthhubdata', // AYAW I REMOVE NING COMMENT MAR, sean's database name "healthhubdata", imoha kay "healthhub_sql" ichange change ra. 
+  database: 'healthhub_sql', // AYAW I REMOVE NING COMMENT MAR, sean's database name "healthhubdata", imoha kay "healthhub_sql" ichange change ra. 
 })
 
 db.connect((err) => {

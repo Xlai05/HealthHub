@@ -5,7 +5,155 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { CheckBox } from 'react-native-elements'; // Import CheckBox
 
 const Tab = createBottomTabNavigator();
-const IPADRESS = '192.168.1.3'
+const IPADRESS = '192.168.1.145'
+
+const SymptomsScreen = ({
+  symptoms,
+  selectedSymptoms,
+  selectMany,
+  handleSymptomCheckbox,
+  handleSymptomSelect,
+  aiLoading,
+  aiResponse,
+  setAiLoading,
+  setAiResponse,
+  setModalVisible,
+  IPADRESS,
+}) => (
+  <View style={{ flex: 1 }}>
+    <ScrollView
+      contentContainerStyle={[styles.scrollContainer, { paddingTop: 60 }]}
+      keyboardShouldPersistTaps="handled"
+    >
+      {Array.isArray(symptoms) && symptoms.length > 0 ? (
+        symptoms.map((symptom, index) => (
+          <TouchableOpacity
+            key={index}
+            style={[
+              styles.button,
+              {
+                backgroundColor: selectedSymptoms.includes(symptom) ? '#388e3c' : '#4CAF50',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+              }
+            ]}
+            onPress={() => {
+              if (selectMany) {
+                handleSymptomCheckbox(symptom);
+              } else {
+                handleSymptomSelect(symptom);
+              }
+            }}
+          >
+            {selectMany ? (
+              <CheckBox
+                checked={selectedSymptoms.includes(symptom)}
+                onPress={() => handleSymptomCheckbox(symptom)}
+                containerStyle={{
+                  padding: 0,
+                  marginRight: 8,
+                  backgroundColor: 'transparent',
+                  borderWidth: 0,
+                }}
+              />
+            ) : null}
+            <Text style={styles.buttonText}>{symptom.toString()}</Text>
+          </TouchableOpacity>
+        ))
+      ) : (
+        <Text>No symptoms available for this body part.</Text>
+      )}
+
+      {selectMany && (
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: '#2196F3' }]}
+          onPress={async () => {
+            setAiLoading(true);
+            setAiResponse('');
+            const prompt = `List possible sicknesses for these symptoms joined and separated: ${selectedSymptoms.join(', ')}.
+            Format your response with clear bullet points for each sickness. For each, briefly list:
+            - OTC medicines/remedies
+            - Exercises
+            - Food suggestions
+            Keep it concise and easy to read.
+            
+            `;
+            try {
+              const response = await fetch(`http://${IPADRESS}:3000/ask-gemini`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt }),
+              });
+              const data = await response.json();
+              setAiResponse(data.reply || 'No response from AI.');
+              setModalVisible(true);
+            } catch (e) {
+              setAiResponse('Failed to contact Gemini AI.');
+              setModalVisible(true);
+            }
+            setAiLoading(false);
+          }}
+          disabled={selectedSymptoms.length === 0 || aiLoading}
+        >
+          <Text style={styles.buttonText}>{aiLoading ? 'Asking AI...' : 'Ask AI'}</Text>
+        </TouchableOpacity>
+      )}
+
+      {selectMany && aiResponse && !aiLoading && (
+        <View style={{ marginTop: 20, backgroundColor: '#e3f2fd', padding: 12, borderRadius: 8 }}>
+          <Text style={{ color: '#222', fontSize: 16 }}>{aiResponse}</Text>
+        </View>
+      )}
+    </ScrollView>
+  </View>
+);
+
+const MedicinesScreen = ({ otcMedicines }) => (
+  <ScrollView contentContainerStyle={styles.container}>
+    <Text style={styles.subtitle}>OTC Medicines</Text>
+    {otcMedicines.length === 0 ? (
+      <Text>No medicines found for this symptom.</Text>
+    ) : (
+      otcMedicines.map((med, idx) => (
+        <View key={idx} style={{ marginBottom: 12 }}>
+          <Text style={{ fontWeight: 'bold' }}>{med.medicine_name || med.name || med}</Text>
+          {med.description && <Text>{med.description}</Text>}
+        </View>
+      ))
+    )}
+  </ScrollView>
+);
+
+const ExercisesScreen = ({ exercises }) => (
+  <ScrollView contentContainerStyle={styles.container}>
+    <Text style={styles.subtitle}>Exercises</Text>
+    {exercises.length === 0 ? (
+      <Text>No exercises found for this symptom.</Text>
+    ) : (
+      exercises.map((ex, idx) => (
+        <View key={idx} style={{ marginBottom: 12 }}>
+          <Text>{ex}</Text>
+        </View>
+      ))
+    )}
+  </ScrollView>
+);
+
+const FoodsScreen = ({ foods }) => (
+  <ScrollView contentContainerStyle={styles.container}>
+    <Text style={styles.subtitle}>Food Suggestions</Text>
+    {foods.length === 0 ? (
+      <Text>No food suggestions found for this symptom.</Text>
+    ) : (
+      foods.map((food, idx) => (
+        <View key={idx} style={{ marginBottom: 12 }}>
+          <Text>{food}</Text>
+        </View>
+      ))
+    )}
+  </ScrollView>
+);
 
 export default function BodyPartSelectorScreen() {
   const [bodyParts, setBodyParts] = useState([]);
@@ -118,130 +266,6 @@ export default function BodyPartSelectorScreen() {
     }
   };
 
-  const SymptomsScreen = () => (
-    <View style={{ flex: 1 }}>
-
-      <ScrollView contentContainerStyle={[styles.scrollContainer, {paddingTop: 60}]}>
-        {Array.isArray(symptoms) && symptoms.length > 0 ? (
-          symptoms.map((symptom, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.button,
-                {
-                  backgroundColor: selectedSymptoms.includes(symptom) ? '#388e3c' : '#4CAF50',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'flex-start',
-                }
-              ]}
-              onPress={() => {
-                if (selectMany) {
-                  handleSymptomCheckbox(symptom);
-                } else {
-                  handleSymptomSelect(symptom);
-                }
-              }}
-            >
-              {selectMany ? (
-                <CheckBox
-                  checked={selectedSymptoms.includes(symptom)}
-                  onPress={() => handleSymptomCheckbox(symptom)}
-                  containerStyle={{
-                    padding: 0,
-                    marginRight: 8,
-                    backgroundColor: 'transparent',
-                    borderWidth: 0,
-                  }}
-                />
-              ) : null}
-              <Text style={styles.buttonText}>{symptom.toString()}</Text>
-            </TouchableOpacity>
-          ))
-        ) : (
-          <Text>No symptoms available for this body part.</Text>
-        )}
-
-        
-        {selectMany && (
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: '#2196F3' }]}
-            onPress={async () => {
-              setAiLoading(true);
-              setAiResponse('');
-              const prompt = `List possible sicknesses for these symptoms: ${selectedSymptoms.join(', ')}.
-              Format your response with clear bullet points for each sickness. For each, briefly list:
-              - OTC medicines/remedies
-              - Exercises
-              - Food suggestions
-              Keep it concise and easy to read.`;
-              try {
-                const response = await fetch(`http://${IPADRESS}:3000/ask-gemini`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ prompt }),
-                });
-                const data = await response.json();
-                setAiResponse(data.reply || 'No response from AI.');
-                setModalVisible(true);
-              } catch (e) {
-                setAiResponse('Failed to contact Gemini AI.');
-                setModalVisible(true);
-              }
-              setAiLoading(false);
-            }}
-            disabled={selectedSymptoms.length === 0 || aiLoading}
-          >
-            <Text style={styles.buttonText}>{aiLoading ? 'Asking AI...' : 'Ask AI'}</Text>
-          </TouchableOpacity>
-        )}
-
-        
-        {selectMany && aiResponse && !aiLoading && (
-          <View style={{ marginTop: 20, backgroundColor: '#e3f2fd', padding: 12, borderRadius: 8 }}>
-            <Text style={{ color: '#222', fontSize: 16 }}>{aiResponse}</Text>
-          </View>
-        )}
-
-        
-      </ScrollView>
-    </View>
-  );
-
-  const MedicinesScreen = () => (
-    <View style={styles.container}>
-      <Text style={styles.subtitle}>OTC Medicines for {selectedSymptom}:</Text>
-      {otcMedicines.map((medicine, index) => (
-        <Text key={index} style={styles.response}>
-          {medicine.medicine_name}: {medicine.medicine_description}
-        </Text>
-      ))}
-
-    </View>
-  );
-
-  const ExercisesScreen = () => (
-    <View style={styles.container}>
-      <Text style={styles.subtitle}>Exercises for {selectedSymptom}:</Text>
-      {exercises.map((exercise, index) => (
-        <Text key={index} style={styles.response}>
-          {exercise}
-        </Text>
-      ))}
-    </View>
-  );
-
-  const FoodsScreen = () => (
-    <View style={styles.container}>
-      <Text style={styles.subtitle}>What to Eat for {selectedSymptom}:</Text>
-      {foods.map((food, index) => (
-        <Text key={index} style={styles.response}>
-          {food}
-        </Text>
-      ))}
-    </View>
-  );
-
   let mainContent = null;
 
   // Example for region selection
@@ -297,7 +321,19 @@ export default function BodyPartSelectorScreen() {
   } else if (!selectedSymptom) {
     mainContent = (
       <View style={{ flex: 1 }}>
-        <SymptomsScreen />
+        <SymptomsScreen
+          symptoms={symptoms}
+          selectedSymptoms={selectedSymptoms}
+          selectMany={selectMany}
+          handleSymptomCheckbox={handleSymptomCheckbox}
+          handleSymptomSelect={handleSymptomSelect}
+          aiLoading={aiLoading}
+          aiResponse={aiResponse}
+          setAiLoading={setAiLoading}
+          setAiResponse={setAiResponse}
+          setModalVisible={setModalVisible}
+          IPADRESS={IPADRESS}
+        />
       </View>
     );
   } else {
@@ -306,24 +342,33 @@ export default function BodyPartSelectorScreen() {
         screenOptions={({ route }) => ({
           tabBarIcon: ({ color, size }) => {
             let iconName;
-
-            if (route.name === 'Medicines') {
-              iconName = 'pill';
-            } else if (route.name === 'Exercises') {
-              iconName = 'run';
-            } else if (route.name === 'What to Eat') {
-              iconName = 'food-apple';
-            }
-
+            if (route.name === 'Medicines') iconName = 'pill';
+            else if (route.name === 'Exercises') iconName = 'run';
+            else if (route.name === 'What to Eat') iconName = 'food-apple';
             return <Icon name={iconName} size={size} color={color} />;
           },
           tabBarActiveTintColor: '#4CAF50',
           tabBarInactiveTintColor: 'gray',
         })}
       >
-        <Tab.Screen name="Medicines" component={MedicinesScreen} />
-        <Tab.Screen name="Exercises" component={ExercisesScreen} />
-        <Tab.Screen name="What to Eat" component={FoodsScreen} />
+        <Tab.Screen
+          name="Medicines"
+          options={{ headerTitleAlign: 'center' }}
+        >
+          {() => <MedicinesScreen otcMedicines={otcMedicines} />}
+        </Tab.Screen>
+        <Tab.Screen
+          name="Exercises"
+          options={{ headerTitleAlign: 'center' }}
+        >
+          {() => <ExercisesScreen exercises={exercises} />}
+        </Tab.Screen>
+        <Tab.Screen
+          name="What to Eat"
+          options={{ headerTitleAlign: 'center' }}
+        >
+          {() => <FoodsScreen foods={foods} />}
+        </Tab.Screen>
       </Tab.Navigator>
     );
   }
