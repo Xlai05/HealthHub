@@ -77,6 +77,9 @@ const SymptomsScreen = ({
             - Exercises
             - Food suggestions
             Keep it concise and easy to read.
+            "Please respond in plain text, without any formatting like bolding or italics."
+            "Do not use markdown in your response."
+            "Provide only the raw text, no formatting."
             
             `;
             try {
