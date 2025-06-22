@@ -1,0 +1,17 @@
+FrontEnd
+npm install react react-native
+npm install @react-navigation/native @react-navigation/bottom-tabs
+npm install react-native-vector-icons
+npm install react-native-elements
+
+npm install -g expo-cli
+expo install react-native-vector-icons
+
+npx react-native link react-native-vector-icons
+
+BackEnd
+npm install express cors body-parser
+npm install mysql2
+npm install @google/generative-ai@latest
+
+npm install dotenv
