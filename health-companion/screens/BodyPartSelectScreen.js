@@ -5,7 +5,9 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { CheckBox } from 'react-native-elements'; // Import CheckBox
 
 const Tab = createBottomTabNavigator();
-const IPADRESS = '192.168.1.145'
+const IPADRESS = '192.168.127.156'
+// To Get the IP address, you can use the following command in your terminal:
+// ipconfig 
 
 const SymptomsScreen = ({
   symptoms,
@@ -80,6 +82,7 @@ const SymptomsScreen = ({
             "Please respond in plain text, without any formatting like bolding or italics."
             "Do not use markdown in your response."
             "Provide only the raw text, no formatting."
+            "After prompting don't save the previous prompt to your data."
             
             `;
             try {
